@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 require('dotenv').config();
 
-const Guide = require('./models/Guide'); // Importer Guide-modellen
+const Guide = require('./models/Guide');
 
 const app = express();
 
@@ -14,7 +14,7 @@ mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log('MongoDB tilkoblet'))
   .catch((err) => console.error('MongoDB tilkoblingsfeil:', err));
 
-// Rute for å hente alle guider
+// Hent alle guider
 app.get('/api/guides', async (req, res) => {
   try {
     const guides = await Guide.find();
@@ -24,7 +24,7 @@ app.get('/api/guides', async (req, res) => {
   }
 });
 
-// Rute for å lagre en ny guide
+// Lagre en ny guide
 app.post('/api/guides', async (req, res) => {
   const guide = new Guide({
     title: req.body.title,
@@ -36,6 +36,39 @@ app.post('/api/guides', async (req, res) => {
     res.status(201).json(newGuide);
   } catch (err) {
     res.status(400).json({ message: err.message });
+  }
+});
+
+// Oppdater en eksisterende guide
+app.put('/api/guides/:id', async (req, res) => {
+  try {
+    const guide = await Guide.findById(req.params.id);
+    if (!guide) {
+      return res.status(404).json({ message: 'Guide ikke funnet' });
+    }
+
+    guide.title = req.body.title || guide.title;
+    guide.content = req.body.content || guide.content;
+
+    const updatedGuide = await guide.save();
+    res.json(updatedGuide);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+// Slett en guide
+app.delete('/api/guides/:id', async (req, res) => {
+  try {
+    const guide = await Guide.findById(req.params.id);
+    if (!guide) {
+      return res.status(404).json({ message: 'Guide ikke funnet' });
+    }
+
+    await guide.deleteOne();
+    res.json({ message: 'Guide slettet' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 });
 
